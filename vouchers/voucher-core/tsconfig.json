@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "outDir": "dist",
+    "resolveJsonModule": true
+  },
+  "include": [
+    "./scripts",
+    "./test",
+    "./deploy",
+    "./typechain/**/*",
+    "init",
+    "upgrade/20210715/set-uri.ts",
+    "upgrade/20210715/set-vestingpool-impl.ts"
+  ],
+  "files": [
+    "./hardhat.config.ts"
+  ]
+}

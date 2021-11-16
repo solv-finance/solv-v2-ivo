@@ -26,11 +26,11 @@ interface IFlexibleDateVestingVoucher {
     ) external returns (uint256 slot, uint256 tokenId);
 }
 
-interface ERC20 {
+interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
-contract InitializeVestingOfferingMarket is OfferingMarketCore {
+contract InitialVestingOfferingMarket is OfferingMarketCore {
     enum TimeType {
         LATEST_START_TIME,
         ON_BUY,
@@ -47,14 +47,6 @@ contract InitializeVestingOfferingMarket is OfferingMarketCore {
 
     //key: offeringId
     mapping(uint24 => MintParameter) public mintParameters;
-
-    function offeringType() public view virtual override returns (uint8) {
-        return 1;
-    }
-
-    function marketName() public view virtual override returns (string memory) {
-        return "Initialize Offering Voucher Market";
-    }
 
     function offer(
         address voucher_,
@@ -83,29 +75,25 @@ contract InitializeVestingOfferingMarket is OfferingMarketCore {
             mintParameter_.terms.length == mintParameter_.percentages.length,
             "invalid terms and percentages"
         );
-        if (
-            mintParameter_.claimType == Constants.ClaimType.ONE_TIME ||
-            mintParameter_.claimType == Constants.ClaimType.LINEAR
-        ) {
-            require(
-                mintParameter_.percentages.length == 1 &&
-                    mintParameter_.percentages[0] == Constants.FULL_PERCENTAGE,
-                "invalid percentages"
-            );
-        } else if (mintParameter_.claimType == Constants.ClaimType.STAGED) {
-            require(
-                mintParameter_.percentages.length > 1,
-                "invalid percentages"
-            );
-            uint256 sumOfPercentages = 0;
-            for (uint256 i = 0; i < mintParameter_.percentages.length; i++) {
-                sumOfPercentages += mintParameter_.percentages[i];
-            }
-            require(
-                sumOfPercentages == Constants.FULL_PERCENTAGE,
-                "invalid percentages"
-            );
+
+        uint256 sumOfPercentages = 0;
+        for (uint256 i = 0; i < mintParameter_.percentages.length; i++) {
+            sumOfPercentages += mintParameter_.percentages[i];
         }
+        require(
+            sumOfPercentages == Constants.FULL_PERCENTAGE,
+            "not full percentage"
+        );
+
+        require(
+            (mintParameter_.claimType == Constants.ClaimType.LINEAR &&
+                mintParameter_.percentages.length == 1) ||
+                (mintParameter_.claimType == Constants.ClaimType.ONE_TIME &&
+                    mintParameter_.percentages.length == 1) ||
+                (mintParameter_.claimType == Constants.ClaimType.STAGED &&
+                    mintParameter_.percentages.length > 1),
+            "invalid params"
+        );
 
         ERC20TransferHelper.doTransferIn(market.asset, msg.sender, units_);
 
@@ -132,7 +120,7 @@ contract InitializeVestingOfferingMarket is OfferingMarketCore {
     {
         Offering memory offering = offerings[offeringId_];
         MintParameter memory parameter = mintParameters[offeringId_];
-        ERC20(markets[offering.voucher].asset).approve(
+        IERC20(markets[offering.voucher].asset).approve(
             markets[offering.voucher].voucherPool,
             units_
         );

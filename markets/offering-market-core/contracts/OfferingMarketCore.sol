@@ -45,7 +45,6 @@ abstract contract OfferingMarketCore is
     );
 
     event Remove(
-        uint8 indexed offeringType,
         address indexed issuer,
         uint24 indexed offeringId,
         address voucher,
@@ -54,7 +53,6 @@ abstract contract OfferingMarketCore is
     );
 
     event FixedPriceSet(
-        uint8 indexed offeringType,
         address indexed voucher,
         uint24 indexed offeringId,
         uint8 priceType,
@@ -62,7 +60,6 @@ abstract contract OfferingMarketCore is
     );
 
     event DecliningPriceSet(
-        uint8 indexed offeringType,
         address indexed voucher,
         uint24 indexed offeringId,
         uint128 highest,
@@ -168,10 +165,6 @@ abstract contract OfferingMarketCore is
         _;
     }
 
-    function offeringType() public view virtual returns (uint8);
-
-    function marketName() public view virtual returns (string memory);
-
     function _mintVoucher(uint24 oferingId, uint128 units)
         internal
         virtual
@@ -184,26 +177,12 @@ abstract contract OfferingMarketCore is
         virtual
         returns (bool);
 
-    function initialize(ISolver solver_) public {
+    function initialize(ISolver solver_) external initializer {
         ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
         AdminControl.__AdminControl_init(msg.sender);
         nextOfferingId = 1;
         nextTradeId = 1;
         setSolver(solver_);
-    }
-
-    function currencies() external view returns (address[] memory currencies_) {
-        currencies_ = new address[](_currencies.length());
-        for (uint256 i = 0; i < _currencies.length(); i++) {
-            currencies_[i] = _currencies.at(i);
-        }
-    }
-
-    function vouchers() external view returns (address[] memory vouchers_) {
-        vouchers_ = new address[](_vouchers.length());
-        for (uint256 i = 0; i < _vouchers.length(); i++) {
-            vouchers_[i] = _vouchers.at(i);
-        }
     }
 
     function _offer(
@@ -218,11 +197,14 @@ abstract contract OfferingMarketCore is
         PriceManager.PriceType priceType_,
         bytes memory priceData_
     ) internal nonReentrant returns (uint24 offeringId) {
-        require(voucher_ != address(0), "voucher address cannot be 0");
-        require(currency_ != address(0), "voucher address cannot be 0");
+        require(
+            voucher_ != address(0) && currency_ != address(0),
+            "address cannot be 0"
+        );
         Market memory market = markets[voucher_];
         require(market.isValid, "unsupported voucher");
         require(_currencies.contains(currency_), "unsupported currency");
+        require(endTime_ > startTime_, "endTime less than startTime");
 
         if (market.onlyManangerOffer) {
             require(
@@ -294,7 +276,6 @@ abstract contract OfferingMarketCore is
             PriceManager.setFixedPrice(offering_.offeringId, price);
 
             emit FixedPriceSet(
-                offeringType(),
                 offering_.voucher,
                 offering_.offeringId,
                 uint8(priceType_),
@@ -317,7 +298,6 @@ abstract contract OfferingMarketCore is
             );
 
             emit DecliningPriceSet(
-                offeringType(),
                 offering_.voucher,
                 offering_.offeringId,
                 highest,
@@ -415,7 +395,7 @@ abstract contract OfferingMarketCore is
         require(
             block.timestamp >= offering_.startTime &&
                 block.timestamp <= offering_.endTime,
-            "not yet on sale or sale end"
+            "not offering time"
         );
         if (offering_.useAllowList) {
             require(
@@ -541,7 +521,6 @@ abstract contract OfferingMarketCore is
         _refund(offeringId_, offering.units);
 
         emit Remove(
-            offeringType(),
             offering.issuer,
             offering.offeringId,
             offering.voucher,
@@ -581,7 +560,7 @@ abstract contract OfferingMarketCore is
     }
 
     function totalOfferingsOfvoucher(address voucher_)
-        public
+        external
         view
         virtual
         returns (uint256)
@@ -590,7 +569,7 @@ abstract contract OfferingMarketCore is
     }
 
     function offeringIdOfvoucherByIndex(address voucher_, uint256 index_)
-        public
+        external
         view
         virtual
         returns (uint256)
@@ -618,9 +597,12 @@ abstract contract OfferingMarketCore is
         uint16 feeRate_,
         bool onlyManangerOffer_
     ) external onlyAdmin {
-        require(voucher_ != address(0), "voucher address cannot be 0");
-        require(voucherPool_ != address(0), "voucherPool address cannot be 0");
-        require(asset_ != address(0), "asset address cannot be 0");
+        require(
+            voucher_ != address(0) &&
+                voucherPool_ != address(0) &&
+                asset_ != address(0),
+            "address cannot be 0"
+        );
         if (_vouchers.contains(voucher_)) {
             revert("already added");
         }

@@ -46,7 +46,15 @@ contract InitialVestingOfferingMarket is OfferingMarketCore {
     }
 
     //key: offeringId
-    mapping(uint24 => MintParameter) public mintParameters;
+    mapping(uint24 => MintParameter) internal _mintParameters;
+
+    function mintParameters(uint24 offeringId_)
+        external
+        view
+        returns (MintParameter memory)
+    {
+        return _mintParameters[offeringId_];
+    }
 
     function offer(
         address voucher_,
@@ -109,7 +117,7 @@ contract InitialVestingOfferingMarket is OfferingMarketCore {
             priceType_,
             priceData_
         );
-        mintParameters[offeringId] = mintParameter_;
+        _mintParameters[offeringId] = mintParameter_;
     }
 
     function _mintVoucher(uint24 offeringId_, uint128 units_)
@@ -119,7 +127,7 @@ contract InitialVestingOfferingMarket is OfferingMarketCore {
         returns (uint256 voucherId)
     {
         Offering memory offering = offerings[offeringId_];
-        MintParameter memory parameter = mintParameters[offeringId_];
+        MintParameter memory parameter = _mintParameters[offeringId_];
         IERC20(markets[offering.voucher].asset).approve(
             markets[offering.voucher].voucherPool,
             units_

@@ -29,9 +29,6 @@ abstract contract OfferingMarketCore is
         Constants.VoucherType voucherType,
         address asset,
         uint8 decimals,
-        FeeType feeType,
-        FeePayType feePayType,
-        uint128 feeAmount,
         uint16 feeRate,
         bool onlyManangerOffer
     );
@@ -80,7 +77,6 @@ abstract contract OfferingMarketCore is
         uint128 price,
         uint128 tradedUnits,
         uint256 tradedAmount,
-        uint8 feePayType,
         uint128 fee
     );
 
@@ -90,24 +86,11 @@ abstract contract OfferingMarketCore is
 
     event NewSolver(ISolver oldSolver, ISolver newSolver);
 
-    enum FeeType {
-        BY_AMOUNT,
-        FIXED
-    }
-
-    enum FeePayType {
-        SELLER_PAY,
-        BUYER_PAY
-    }
-
     struct Market {
         Constants.VoucherType voucherType;
         address voucherPool;
         address asset;
         uint8 decimals;
-        FeeType feeType;
-        FeePayType feePayType;
-        uint128 feeAmount;
         uint16 feeRate;
         bool onlyManangerOffer;
         bool isValid;
@@ -331,18 +314,9 @@ abstract contract OfferingMarketCore is
             amount_ != msg.value
         ) {
             amount_ = msg.value;
-            uint128 fee = _getFee(offering.voucher, amount_);
-            uint256 units256;
-            if (market.feePayType == FeePayType.BUYER_PAY) {
-                units256 = amount_
-                    .sub(fee, "fee exceeds amount")
-                    .mul(uint256(10**market.decimals))
-                    .div(uint256(price));
-            } else {
-                units256 = amount_.mul(uint256(10**market.decimals)).div(
-                    uint256(price)
-                );
-            }
+            uint256 units256 = amount_.mul(uint256(10**market.decimals)).div(
+                uint256(price)
+            );
             require(units256 <= uint128(-1), "exceeds uint128 max");
             units_ = uint128(units256);
         }
@@ -376,7 +350,6 @@ abstract contract OfferingMarketCore is
     struct BuyLocalVar {
         uint256 transferInAmount;
         uint256 transferOutAmount;
-        FeePayType feePayType;
     }
 
     struct BuyParameter {
@@ -419,20 +392,12 @@ abstract contract OfferingMarketCore is
             "insufficient units for sale"
         );
         BuyLocalVar memory vars;
-        vars.feePayType = markets[offering_.voucher].feePayType;
 
-        if (vars.feePayType == FeePayType.BUYER_PAY) {
-            vars.transferInAmount = parameter_.amount.add(parameter_.fee);
-            vars.transferOutAmount = parameter_.amount;
-        } else if (vars.feePayType == FeePayType.SELLER_PAY) {
-            vars.transferInAmount = parameter_.amount;
-            vars.transferOutAmount = parameter_.amount.sub(
-                parameter_.fee,
-                "fee exceeds amount"
-            );
-        } else {
-            revert("unsupported feePayType");
-        }
+        vars.transferInAmount = parameter_.amount;
+        vars.transferOutAmount = parameter_.amount.sub(
+            parameter_.fee,
+            "fee exceeds amount"
+        );
 
         uint256 voucherId = _transferAsset(
             offering_,
@@ -465,7 +430,6 @@ abstract contract OfferingMarketCore is
             parameter_.price,
             parameter_.units,
             parameter_.amount,
-            uint8(vars.feePayType),
             parameter_.fee
         );
     }
@@ -536,17 +500,12 @@ abstract contract OfferingMarketCore is
         returns (uint128)
     {
         Market storage market = markets[voucher_];
-        if (market.feeType == FeeType.FIXED) {
-            return market.feeAmount;
-        } else if (market.feeType == FeeType.BY_AMOUNT) {
-            uint256 fee = amount.mul(uint256(market.feeRate)).div(
-                uint256(Constants.FULL_PERCENTAGE)
-            );
-            require(fee <= uint128(-1), "Fee: exceeds uint128 max");
-            return uint128(fee);
-        } else {
-            revert("unsupported feeType");
-        }
+
+        uint256 fee = amount.mul(uint256(market.feeRate)).div(
+            uint256(Constants.FULL_PERCENTAGE)
+        );
+        require(fee <= uint128(-1), "Fee: exceeds uint128 max");
+        return uint128(fee);
     }
 
     function getPrice(uint24 offeringId_)
@@ -591,18 +550,9 @@ abstract contract OfferingMarketCore is
         Constants.VoucherType voucherType_,
         address asset_,
         uint8 decimals_,
-        FeeType feeType_,
-        FeePayType feePayType_,
-        uint128 feeAmount_,
         uint16 feeRate_,
         bool onlyManangerOffer_
     ) external onlyAdmin {
-        require(
-            voucher_ != address(0) &&
-                voucherPool_ != address(0) &&
-                asset_ != address(0),
-            "address cannot be 0"
-        );
         if (_vouchers.contains(voucher_)) {
             revert("already added");
         }
@@ -610,9 +560,6 @@ abstract contract OfferingMarketCore is
         markets[voucher_].voucherPool = voucherPool_;
         markets[voucher_].isValid = true;
         markets[voucher_].decimals = decimals_;
-        markets[voucher_].feePayType = FeePayType(feePayType_);
-        markets[voucher_].feeType = FeeType(feeType_);
-        markets[voucher_].feeAmount = feeAmount_;
         markets[voucher_].feeRate = feeRate_;
         markets[voucher_].voucherType = voucherType_;
         markets[voucher_].asset = asset_;
@@ -625,9 +572,6 @@ abstract contract OfferingMarketCore is
             voucherType_,
             asset_,
             decimals_,
-            feeType_,
-            feePayType_,
-            feeAmount_,
             feeRate_,
             onlyManangerOffer_
         );

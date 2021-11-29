@@ -20,31 +20,6 @@ contract PriceManager {
     mapping(uint24 => DecliningPrice) internal decliningPrices;
     mapping(uint24 => uint128) internal fixedPrices;
 
-    function getDecliningPrice(uint24 offeringId_)
-        external
-        view
-        returns (
-            uint128 highest,
-            uint128 lowest,
-            uint32 startTime,
-            uint32 duration,
-            uint32 interval
-        )
-    {
-        DecliningPrice storage decliningPrice = decliningPrices[offeringId_];
-        return (
-            decliningPrice.highest,
-            decliningPrice.lowest,
-            decliningPrice.startTime,
-            decliningPrice.duration,
-            decliningPrice.interval
-        );
-    }
-
-    function getFixedPrice(uint24 offeringId_) external view returns (uint128) {
-        return fixedPrices[offeringId_];
-    }
-
     function price(PriceType priceType_, uint24 offeringId_)
         internal
         view
@@ -95,5 +70,30 @@ contract PriceManager {
         decliningPrices[offeringId_].lowest = lowest_;
         decliningPrices[offeringId_].duration = duration_;
         decliningPrices[offeringId_].interval = interval_;
+    }
+
+    function getDecliningPrice(uint24 offeringId_)
+        external
+        view
+        returns (
+            uint128 highest,
+            uint128 lowest,
+            uint32 startTime,
+            uint32 duration,
+            uint32 interval
+        )
+    {
+        DecliningPrice storage decliningPrice = decliningPrices[offeringId_];
+        return (
+            decliningPrice.highest,
+            decliningPrice.lowest,
+            decliningPrice.startTime,
+            decliningPrice.duration,
+            decliningPrice.interval
+        );
+    }
+
+    function getFixedPrice(uint24 offeringId_) external view returns (uint128) {
+        return fixedPrices[offeringId_];
     }
 }

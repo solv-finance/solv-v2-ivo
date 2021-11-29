@@ -141,18 +141,20 @@ contract InitialVestingOfferingMarket is OfferingMarketCore {
             uint64 startTime = parameter.timeType == TimeType.LATEST_START_TIME
                 ? parameter.latestStartTime
                 : uint64(block.timestamp);
-            if (parameter.claimType == Constants.ClaimType.ONE_TIME) {
-                maturities[0] = startTime + parameter.terms[0];
-                term = 0;
-            } else {
-                for (uint256 i = 0; i < parameter.terms.length; i++) {
-                    //term[0] is not be included
-                    if (i > 0) {
-                        term += parameter.terms[i];
-                    }
-                    maturities[i] = startTime + term;
-                }
+
+            for (uint256 i = 0; i < parameter.terms.length; i++) {
+                term += parameter.terms[i];
+                maturities[i] = startTime + term;
             }
+
+            if (parameter.claimType == Constants.ClaimType.STAGED) {
+                //standard vesting voucher: staged term should be not included terms[0]
+                term -= parameter.terms[0];
+            } else if (parameter.claimType == Constants.ClaimType.ONE_TIME) {
+                //standard vesting voucher: one-time term should be 0
+                term = 0;
+            }
+
             (, voucherId) = vestingVoucher.mint(
                 term,
                 units_,

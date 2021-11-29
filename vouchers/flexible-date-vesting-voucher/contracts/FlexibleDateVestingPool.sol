@@ -10,6 +10,7 @@ import "@solv/v2-solidity-utils/contracts/helpers/ERC20TransferHelper.sol";
 import "@solv/v2-solidity-utils/contracts/helpers/VNFTTransferHelper.sol";
 import "@solv/v2-solidity-utils/contracts/openzeppelin/utils/ReentrancyGuardUpgradeable.sol";
 import "@solv/v2-solidity-utils/contracts/openzeppelin/utils/EnumerableSetUpgradeable.sol";
+import "@solv/v2-solidity-utils/contracts/openzeppelin/math/SafeMathUpgradeable.sol";
 import "@solv/v2-solidity-utils/contracts/openzeppelin/token/ERC20/IERC20.sol";
 import "@solv/v2-vnft-core/contracts/interface/optional/IUnderlyingContainer.sol";
 import "./interface/IFlexibleDateVestingPool.sol";
@@ -25,6 +26,7 @@ contract FlexibleDateVestingPool is
     using StringConvertor for uint64;
     using StringConvertor for uint64[];
     using StringConvertor for uint32[];
+    using SafeMathUpgradeable for uint256;
 
     /// @dev slot => SlotDetail
     mapping(uint256 => SlotDetail) internal _slotDetails;
@@ -119,14 +121,14 @@ contract FlexibleDateVestingPool is
         address minter_,
         uint256 slot_,
         uint256 vestingAmount_
-    ) external onlyManager {
+    ) external nonReentrant onlyManager {
+        amountOfSlot[slot_] = amountOfSlot[slot_].add(vestingAmount_);
+        totalAmount = totalAmount.add(vestingAmount_);
         ERC20TransferHelper.doTransferIn(
             underlyingToken,
             minter_,
             vestingAmount_
         );
-        amountOfSlot[slot_] += vestingAmount_;
-        totalAmount += vestingAmount_;
         emit Mint(minter_, slot_, vestingAmount_);
     }
 
@@ -134,12 +136,12 @@ contract FlexibleDateVestingPool is
         uint256 slot_,
         address to_,
         uint256 claimAmount
-    ) external onlyManager {
+    ) external nonReentrant onlyManager {
         if (claimAmount > amountOfSlot[slot_]) {
             claimAmount = amountOfSlot[slot_];
         }
-        amountOfSlot[slot_] -= claimAmount;
-        totalAmount -= claimAmount;
+        amountOfSlot[slot_] = amountOfSlot[slot_].sub(claimAmount);
+        totalAmount = totalAmount.sub(claimAmount);
 
         SlotDetail storage slotDetail = _slotDetails[slot_];
         uint64 finalTerm = slotDetail.claimType ==

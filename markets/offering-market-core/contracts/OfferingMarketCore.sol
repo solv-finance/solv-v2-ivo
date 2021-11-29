@@ -301,8 +301,9 @@ abstract contract OfferingMarketCore is
         address buyer = msg.sender;
         uint128 price = getPrice(offeringId_);
         Offering storage offering = offerings[offeringId_];
-        Market memory market = markets[offering.voucher];
+        require(offering.isValid, "invalid offering");
 
+        Market memory market = markets[offering.voucher];
         require(market.isValid, "invalid market");
         amount_ = uint256(units_).mul(uint256(price)).div(
             uint256(10**market.decimals)

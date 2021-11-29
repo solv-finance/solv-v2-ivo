@@ -187,12 +187,12 @@ contract FlexibleDateVestingVoucher is IFlexibleDateVestingVoucher, VoucherCore,
         return address(flexibleDateVestingPool.underlyingVestingVoucher());
     }
 
-    function product() external pure returns (string memory) {
-        return "Flexible Date Vesting Voucher";
+    function voucherType() external pure override returns (Constants.VoucherType) {
+        return Constants.VoucherType.FLEXIBLE_DATE_VESTING;
     }
 
     function version() external pure returns (string memory) {
-        return "1.0.0";
+        return "1.0.2";
     }
 
 }

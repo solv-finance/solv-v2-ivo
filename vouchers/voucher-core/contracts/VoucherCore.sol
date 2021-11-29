@@ -3,6 +3,7 @@
 pragma solidity 0.7.6;
 
 import "@solv/v2-solidity-utils/contracts/access/AdminControl.sol";
+import "@solv/v2-solidity-utils/contracts/misc/Constants.sol";
 import "@solv/v2-vnft-core/contracts/VNFTCoreV2.sol";
 
 abstract contract VoucherCore is VNFTCoreV2, AdminControl {
@@ -177,5 +178,7 @@ abstract contract VoucherCore is VNFTCoreV2, AdminControl {
     function owner() external view virtual returns (address) {
         return admin;
     }
+
+    function voucherType() external view virtual returns (Constants.VoucherType) {}
 
 }

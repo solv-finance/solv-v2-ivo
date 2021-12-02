@@ -63,6 +63,7 @@ contract FlexibleDateVestingPool is
         uint64[] calldata terms_,
         uint32[] calldata percentages_
     ) external onlyManager returns (uint256 slot) {
+        require(issuer_ != address(0), "issuer cannot be 0 address");
         slot = getSlot(
             issuer_,
             claimType_,
@@ -297,6 +298,7 @@ contract FlexibleDateVestingPool is
     }
 
     function setManager(address newManager_) external onlyAdmin {
+        require(newManager_ != address(0), "new manager cannot be 0 address");
         emit NewManager(manager, newManager_);
         manager = newManager_;
     }

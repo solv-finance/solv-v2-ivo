@@ -160,7 +160,12 @@ abstract contract VoucherCore is VNFTCoreV2, AdminControl {
         VNFTCoreV2._mintUnits(minter_, tokenId, slot_, units_);
     }
 
-    function burn(uint256 tokenId_) public virtual {
+    function burn(uint256 tokenId_) external virtual {
+        require(_msgSender() == ownerOf(tokenId_), "only owner");
+        _burnVoucher(tokenId_);
+    }
+
+    function _burnVoucher(uint256 tokenId_) internal virtual {
         delete voucherSlotMapping[tokenId_];
         VNFTCoreV2._burn(tokenId_);
     }

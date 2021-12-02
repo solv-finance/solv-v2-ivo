@@ -256,7 +256,7 @@ abstract contract VNFTCoreV2 is IVNFT, IVNFTMetadata, ERC721Upgradeable {
         returns (uint256 units_)
     {
         for (uint256 i = 0; i < tokensInSlot(slot_); i++) {
-            units_ += unitsInToken(tokenOfSlotByIndex(slot_, i));
+            units_ = units_.add(unitsInToken(tokenOfSlotByIndex(slot_, i)));
         }
     }
 

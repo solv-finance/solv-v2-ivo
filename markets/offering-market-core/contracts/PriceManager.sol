@@ -65,6 +65,8 @@ contract PriceManager {
         uint32 duration_,
         uint32 interval_
     ) internal {
+        require(highest_ > lowest_, "highest must greater than lowest");
+        require(duration_ >= interval_, "duration must greater than interval");
         decliningPrices[offeringId_].startTime = startTime_;
         decliningPrices[offeringId_].highest = highest_;
         decliningPrices[offeringId_].lowest = lowest_;

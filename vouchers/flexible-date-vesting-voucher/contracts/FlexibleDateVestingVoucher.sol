@@ -66,6 +66,9 @@ contract FlexibleDateVestingVoucher is IFlexibleDateVestingVoucher, VoucherCore,
         );
         require(err == 0, "Solver: not allowed");
 
+        require(issuer_ != address(0), "issuer cannot be 0 address");
+        require(latestStartTime_ > 0, "latestStartTime cannot be 0");
+
         slot = getSlot(issuer_, claimType_, latestStartTime_, terms_, percentages_);
         FlexibleDateVestingPool.SlotDetail memory slotDetail = getSlotDetail(slot);
         if (!slotDetail.isValid) {
@@ -99,7 +102,7 @@ contract FlexibleDateVestingVoucher is IFlexibleDateVestingVoucher, VoucherCore,
         flexibleDateVestingPool.claim(voucherSlotMapping[tokenId_], to_, claimAmount_);
 
         if (claimAmount_ == unitsInToken(tokenId_)) {
-            burn(tokenId_);
+            _burnVoucher(tokenId_);
         } else {
             _burnUnits(tokenId_, claimAmount_);
         }
@@ -192,7 +195,7 @@ contract FlexibleDateVestingVoucher is IFlexibleDateVestingVoucher, VoucherCore,
     }
 
     function version() external pure returns (string memory) {
-        return "1.0.2";
+        return "2.5";
     }
 
 }

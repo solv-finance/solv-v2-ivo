@@ -558,6 +558,7 @@ abstract contract OfferingMarketCore is
             revert("already added");
         }
         require(isSupportVoucherType(voucherType_), "unsupported voucher type");
+        require(feeRate_ <= Constants.FULL_PERCENTAGE, "invalid fee rate");
         markets[voucher_].voucherPool = voucherPool_;
         markets[voucher_].isValid = true;
         markets[voucher_].decimals = decimals_;
@@ -667,12 +668,15 @@ abstract contract OfferingMarketCore is
         }
     }
 
-    function voucherManager(address voucher_, uint256 index_)
+    function voucherManagers(address voucher_)
         external
         view
-        returns (address)
+        returns (address[] memory managers_)
     {
-        return _voucherManagers[voucher_].at(index_);
+        managers_ = new address[](_voucherManagers[voucher_].length());
+        for (uint256 i = 0; i < _voucherManagers[voucher_].length(); i++) {
+            managers_[i] = _voucherManagers[voucher_].at(i);
+        }
     }
 
     function setSolver(ISolver newSolver_) public virtual onlyAdmin {

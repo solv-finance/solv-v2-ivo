@@ -76,9 +76,17 @@ contract FlexibleDateVestingPool is
             terms_.length == percentages_.length,
             "invalid terms and percentages"
         );
+        // latestStartTime should not be later than 2100/01/01 00:00:00
+        require(latestStartTime_ < 4102416000, "latest start time too late");
+        // number of stages should not be more than 50
+        require(percentages_.length <= 50, "too many stages");
 
         uint256 sumOfPercentages = 0;
         for (uint256 i = 0; i < percentages_.length; i++) {
+            // value of each term should not be larger than 10 years
+            require(terms_[i] <= 315360000, "term value too large");
+            // value of each percentage should not be larger than 10000
+            require(percentages_[i] <= Constants.FULL_PERCENTAGE, "percentage value too large");
             sumOfPercentages += percentages_[i];
         }
         require(
@@ -155,6 +163,9 @@ contract FlexibleDateVestingPool is
             ? slotDetail.startTime
             : slotDetail.latestStartTime;
 
+        // Since the `startTime` and `terms` are read from storage, and their values have been 
+        // checked before stored when minting a new voucher, so there is no need here to check 
+        // the overflow of the values of `maturities`.
         uint64[] memory maturities = new uint64[](slotDetail.terms.length);
         maturities[0] = startTime + slotDetail.terms[0];
         for (uint256 i = 1; i < maturities.length; i++) {
@@ -309,6 +320,8 @@ contract FlexibleDateVestingPool is
         returns (uint64 vestingTerm)
     {
         for (uint256 i = 1; i < terms_.length; i++) {
+            // The value of `terms_` are read from storage, and their values have been checked before 
+            // stored, so there is no need here to check the overflow of `vestingTerm`.
             vestingTerm += terms_[i];
         }
     }

@@ -75,7 +75,7 @@ contract InitialVestingOfferingMarket is OfferingMarketCore {
             require(
                 market.voucherType ==
                     Constants.VoucherType.FLEXIBLE_DATE_VESTING,
-                "only offering voucher support undecided time"
+                "invalid time type"
             );
         }
 
@@ -83,9 +83,17 @@ contract InitialVestingOfferingMarket is OfferingMarketCore {
             mintParameter_.terms.length == mintParameter_.percentages.length,
             "invalid terms and percentages"
         );
+        // latestStartTime should not be later than 2100/01/01 00:00:00
+        require(mintParameter_.latestStartTime < 4102416000, "latest start time too late");
+        // number of stages should not be more than 50
+        require(mintParameter_.percentages.length <= 50, "too many stages");
 
         uint256 sumOfPercentages = 0;
         for (uint256 i = 0; i < mintParameter_.percentages.length; i++) {
+            // value of each term should not be larger than 10 years
+            require(mintParameter_.terms[i] <= 315360000, "term value too large");
+            // value of each percentage should not be larger than 10000
+            require(mintParameter_.percentages[i] <= Constants.FULL_PERCENTAGE, "percentage value too large");
             sumOfPercentages += mintParameter_.percentages[i];
         }
         require(
@@ -142,6 +150,9 @@ contract InitialVestingOfferingMarket is OfferingMarketCore {
                 ? parameter.latestStartTime
                 : uint64(block.timestamp);
 
+            // The values of `startTime` and `terms` are read from storage, and their values have been
+            // checked before stored when offering a new IVO, so there is no need here to check the 
+            // overflow of the value of `term` and `maturities`.
             for (uint256 i = 0; i < parameter.terms.length; i++) {
                 term += parameter.terms[i];
                 maturities[i] = startTime + term;

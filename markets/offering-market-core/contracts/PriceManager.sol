@@ -40,8 +40,8 @@ contract PriceManager {
 
             uint256 lastPrice = price_.highest -
                 ((block.timestamp - price_.startTime) / price_.interval) *
-                (((price_.highest - price_.lowest) / price_.duration) *
-                    price_.interval);
+                ((price_.interval * (price_.highest - price_.lowest)) /
+                    price_.duration);
             uint256 price256 = lastPrice < price_.lowest
                 ? price_.lowest
                 : lastPrice;

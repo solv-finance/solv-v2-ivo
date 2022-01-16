@@ -62,8 +62,9 @@ contract ChainlinkPriceOracle is IPriceOracle, ChainlinkClient {
         uint64 fromDate_,
         uint64 toDate_
     ) external override onlyPriceOracleManager {
-        string memory fromDate = _getDateString(fromDate_);
+        require(block.timestamp > toDate_, "premature");
 
+        string memory fromDate = _getDateString(fromDate_);
         string memory toDate = _getDateString(toDate_);
 
         bytes32 dateSignature = _getDateSignature(fromDate, toDate);
@@ -84,7 +85,7 @@ contract ChainlinkPriceOracle is IPriceOracle, ChainlinkClient {
         address underlying_,
         uint64 fromDate_,
         uint64 toDate_
-    ) external view override onlyPriceOracleManager returns (int256) {
+    ) external view override returns (int256) {
         string memory fromDate = _getDateString(fromDate_);
         string memory toDate = _getDateString(toDate_);
         bytes32 dateSignature = _getDateSignature(fromDate, toDate);
@@ -99,7 +100,7 @@ contract ChainlinkPriceOracle is IPriceOracle, ChainlinkClient {
         uint256 year = uint256(date_).getYear();
         uint256 month = uint256(date_).getMonth();
         uint256 day = uint256(date_).getDay();
-        return string(abi.encode(year, "-", month, "-", day));
+        return string(abi.encodePacked(year, "-", month, "-", day));
     }
 
     function _requestChainlinkOracle(
@@ -146,8 +147,15 @@ contract ChainlinkPriceOracle is IPriceOracle, ChainlinkClient {
         oraclePayment = payment_;
     }
 
-    function setTokenId(address underlying_, uint256 tokenId_) external onlyAdmin {
+    function setTokenId(address underlying_, uint256 tokenId_)
+        external
+        onlyAdmin
+    {
         tokenIds[underlying_] = tokenId_;
+    }
+
+    function setPriceOracleManager(address manager_) external onlyAdmin {
+        priceOracleManager = manager_;
     }
 
     function setPendingAdmin(address newPendingAdmin) external {

@@ -24,7 +24,7 @@ contract PriceOracleManager is IPriceOracleManager, AdminControl {
     IPriceOracle public defaultOracle;
 
     //voucher => pricePeriod
-    mapping(address => uint64) pricePeriods;
+    mapping(address => uint64) internal _pricePeriods;
 
     //voucher => IPriceOracle
     mapping(address => IPriceOracle) internal _oracles;
@@ -59,15 +59,30 @@ contract PriceOracleManager is IPriceOracleManager, AdminControl {
         external
         onlyAdmin
     {
-        pricePeriods[voucher_] = pricePeriod_;
+        _pricePeriods[voucher_] = pricePeriod_;
     }
 
-    function refreshUnderlyingPriceOfMaturity(
-        address voucher_,
-        uint256 tokenId_
-    ) external {
-        uint64 maturity = _getMaturity(voucher_, tokenId_);
-        require(block.timestamp > maturity, "too early");
+    function getPricePeriod(address voucher_) external view returns (uint64) {
+        return _pricePeriods[voucher_];
+    }
+
+    function refreshUnderlyingPriceOfTokenId(address voucher_, uint256 tokenId_)
+        external
+    {
+        uint64 maturity = _getMaturityOfTokenId(voucher_, tokenId_);
+        // require(block.timestamp > maturity, "too early");
+
+        address underlying = IConvertibleVoucher(voucher_).underlying();
+        (uint64 fromDate, uint64 toDate) = _getPeriod(voucher_, maturity);
+
+        getOracle(voucher_).refreshPrice(underlying, fromDate, toDate);
+    }
+
+    function refreshUnderlyingPriceOfSlot(address voucher_, uint256 slot_)
+        external
+    {
+        uint64 maturity = _getMaturityOfSlot(voucher_, slot_);
+        // require(block.timestamp > maturity, "too early");
 
         address underlying = IConvertibleVoucher(voucher_).underlying();
         (uint64 fromDate, uint64 toDate) = _getPeriod(voucher_, maturity);
@@ -82,7 +97,19 @@ contract PriceOracleManager is IPriceOracleManager, AdminControl {
                 : defaultOracle;
     }
 
-    function _getMaturity(address voucher_, uint256 tokenId_)
+    function _getMaturityOfSlot(address voucher_, uint256 slot_)
+        internal
+        view
+        returns (uint64)
+    {
+        IConvertiblePool.SlotDetail memory slotDetail = IConvertibleVoucher(
+            voucher_
+        ).getSlotDetail(slot_);
+
+        return slotDetail.maturity;
+    }
+
+    function _getMaturityOfTokenId(address voucher_, uint256 tokenId_)
         internal
         view
         returns (uint64)
@@ -100,9 +127,9 @@ contract PriceOracleManager is IPriceOracleManager, AdminControl {
         view
         returns (uint64 fromDate_, uint64 toDate_)
     {
-        uint64 pricePeriod = pricePeriods[voucher_] == 0
+        uint64 pricePeriod = _pricePeriods[voucher_] == 0
             ? defaultPricePeriod
-            : pricePeriods[voucher_];
+            : _pricePeriods[voucher_];
         toDate_ = maturity_;
         fromDate_ = toDate_ - pricePeriod;
     }
@@ -115,7 +142,7 @@ contract PriceOracleManager is IPriceOracleManager, AdminControl {
         returns (int256 price_)
     {
         address underlying = IConvertibleVoucher(voucher_).underlying();
-        uint64 maturity = _getMaturity(voucher_, tokenId_);
+        uint64 maturity = _getMaturityOfTokenId(voucher_, tokenId_);
         (uint64 fromDate, uint64 toDate) = _getPeriod(voucher_, maturity);
         return getOracle(voucher_).getPrice(underlying, fromDate, toDate);
     }

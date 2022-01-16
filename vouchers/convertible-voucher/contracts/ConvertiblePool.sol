@@ -202,7 +202,7 @@ contract ConvertiblePool is
         SlotDetail storage slotDetail = _slotDetails[slot_];
         require(slotDetail.isValid, "invalid slot");
         require(!slotDetail.isIssuerRefunded, "already refunded");
-        require(block.timestamp < slotDetail.maturity, "non refund time");
+        require(slotDetail.settlePrice == 0, "already settled");
 
         slotDetail.isIssuerRefunded = true;
 
@@ -356,6 +356,10 @@ contract ConvertiblePool is
             if (settlePrice == 0) {
                 revert("price not settled");
             }
+        }
+
+        if (!slotDetail.isClaimed) {
+            slotDetail.isClaimed = true;
         }
 
         if (

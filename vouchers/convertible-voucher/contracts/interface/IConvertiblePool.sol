@@ -4,6 +4,7 @@ pragma solidity 0.7.6;
 pragma abicoder v2;
 
 interface IConvertiblePool {
+
     enum CollateralType {
         ERC20,
         VESTING_VOUCHER
@@ -20,7 +21,7 @@ interface IConvertiblePool {
      *        bit0: isValid
      *        bit1: isRefunded (if refunded, CV holders will receive currency instead of token)
      *        bit2: isRedeemed
-     *        bit3: isVestingClaimed, identify if the underlying vesting voucher has been claimed
+     *        bit3: isClaimed, identify if the CV has been claimed by any holder
      *        bit4 ~ bit15: reserved
      */
     struct SlotDetail {
@@ -35,7 +36,7 @@ interface IConvertiblePool {
         CollateralType collateralType;
         bool isIssuerRefunded;
         bool isIssuerWithdrawn;
-        bool isVestingClaimed;
+        bool isClaimed;
         bool isValid;
     }
 

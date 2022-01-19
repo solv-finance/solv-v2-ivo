@@ -309,19 +309,6 @@ abstract contract OfferingMarketCore is
             uint256(10**market.decimals)
         );
 
-        if (
-            offering.currency == Constants.ETH_ADDRESS &&
-            offering.priceType == PriceType.DECLIINING_BY_TIME &&
-            amount_ != msg.value
-        ) {
-            amount_ = msg.value;
-            uint256 units256 = amount_.mul(uint256(10**market.decimals)).div(
-                uint256(price)
-            );
-            require(units256 <= uint128(-1), "exceeds uint128 max");
-            units_ = uint128(units256);
-        }
-
         fee_ = _getFee(offering.voucher, amount_);
 
         uint256 err = solver.operationAllowed(

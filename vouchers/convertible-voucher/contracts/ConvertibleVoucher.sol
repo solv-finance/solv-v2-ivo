@@ -55,6 +55,7 @@ contract ConvertibleVoucher is IConvertibleVoucher, VoucherCore, ReentrancyGuard
     ) 
         external 
         override
+        nonReentrant
         returns (uint256 slot, uint256 tokenId) 
     {
         uint256 err = solver.operationAllowed(

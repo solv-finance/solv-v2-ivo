@@ -135,37 +135,6 @@ contract ConvertiblePool is
         require(collateralType_ < 2, "invalid collateral type");
     }
 
-    /**
-     * Mint Convertible Voucher with an already existing Vesting Voucher.
-     */
-    // function mintWithVestingVoucher(address minter_, uint256 slot_, uint256 vestingVoucherId_)
-    //     external
-    //     nonReentrant
-    //     onlyVoucher
-    //     returns (uint256 totalValue)
-    // {
-    //     SlotDetail storage slotDetail = _slotDetails[slot_];
-    //     require(slotDetail.isValid, "invalid slot");
-
-    //     (
-    //         uint8 claimType, ,
-    //         uint256 vestingAmount,
-    //         uint256 principal,
-    //         uint64[] memory maturities, , , ,
-    //     )
-    //         = IICToken(underlyingVestingVoucher).getSnapshot(vestingVoucherId_);
-
-    //     require(claimType == 1, "invalid claimType");
-    //     require(vestingAmount == principal, "invalid principal");
-
-    //     totalValue = vestingAmount.mul(slotDetail.lowestPrice);
-    //     slotDetail.totalValue = totalValue;
-    //     slotBalances[slot_][underlyingToken] = slotBalances[slot_][underlyingToken].add(vestingAmount);
-    //     VNFTTransferHelper.doTransferIn(underlyingVestingVoucher, minter_, vestingVoucherId_);
-
-    //     emit Mint(minter_, slot_, totalValue);
-    // }
-
     function mintWithUnderlyingToken(
         address minter_,
         uint256 slot_,
@@ -178,7 +147,7 @@ contract ConvertiblePool is
         require(!slotDetail.isIssuerRefunded, "cannot mint after refund");
 
         totalValue = tokenInAmount_.mul(slotDetail.lowestPrice);
-        slotDetail.totalValue = totalValue;
+        slotDetail.totalValue = slotDetail.totalValue.add(totalValue);
         slotBalances[slot_][underlyingToken] = slotBalances[slot_][
             underlyingToken
         ].add(tokenInAmount_);
@@ -192,9 +161,9 @@ contract ConvertiblePool is
     }
 
     /**
-     * @notice Allow issuers to refund convertible vouchers with fund currency. Refunding is only allowed before
-     * maturity. After refunding, CV holders will claim fund currency instead of underlying token when `settlePrice`
-     * lies in the range of lowestPrice and highestPrice.
+     * @dev Allow issuers to refund convertible vouchers with fund currency. 
+     * Refunding is only allowed before the first holder claiming. Once refunded,
+     * holders will claim in terms of 
      */
     function refund(uint256 slot_) external override nonReentrant {
         require(_issuerSlots[_msgSender()].contains(slot_), "only issuer");
@@ -310,6 +279,9 @@ contract ConvertiblePool is
         slotDetail.isIssuerWithdrawn = true;
 
         if (withdrawCurrencyAmount > 0) {
+            slotBalances[slot_][slotDetail.fundCurrency] = slotBalances[slot_][
+                slotDetail.fundCurrency
+            ].sub(withdrawCurrencyAmount);
             ERC20TransferHelper.doTransferOut(
                 slotDetail.fundCurrency,
                 _msgSender(),
@@ -317,6 +289,9 @@ contract ConvertiblePool is
             );
         }
         if (withdrawTokenAmount > 0) {
+            slotBalances[slot_][underlyingToken] = slotBalances[slot_][
+                underlyingToken
+            ].sub(withdrawTokenAmount);
             ERC20TransferHelper.doTransferOut(
                 underlyingToken,
                 _msgSender(),

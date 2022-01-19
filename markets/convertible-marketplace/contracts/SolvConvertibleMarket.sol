@@ -373,8 +373,8 @@ contract SolvConvertibleMarketplace is
         uint128 price = PriceManager.price(sale.priceType, sale.saleId);
         uint256 units256;
         if (markets[sale.voucher].feePayType == FeePayType.BUYER_PAY) {
+            amount_ = amount_.sub(fee, "fee exceeds amount");
             units256 = amount_
-                .sub(fee, "fee exceeds amount")
                 .mul(uint256(markets[sale.voucher].precision))
                 .div(uint256(price));
         } else {
@@ -412,6 +412,10 @@ contract SolvConvertibleMarketplace is
         returns (uint256 amount_, uint128 fee_)
     {
         Sale storage sale = sales[saleId_];
+        if (markets[sale.voucher].feePayType == FeePayType.BUYER_PAY) {
+            require(sale.currency != Constants.ETH_ADDRESS, "buyByUnits unsupported");
+        }
+
         address buyer = msg.sender;
         uint128 price = PriceManager.price(sale.priceType, sale.saleId);
 
@@ -419,27 +423,30 @@ contract SolvConvertibleMarketplace is
             uint256(markets[sale.voucher].precision)
         );
 
-        if (
-            sale.currency == Constants.ETH_ADDRESS &&
-            sale.priceType == PriceType.DECLIINING_BY_TIME &&
-            amount_ != msg.value
-        ) {
-            amount_ = msg.value;
-            uint128 fee = _getFee(sale.voucher, amount_);
-            uint256 units256;
-            if (markets[sale.voucher].feePayType == FeePayType.BUYER_PAY) {
-                units256 = amount_
-                    .sub(fee, "fee exceeds amount")
-                    .mul(uint256(markets[sale.voucher].precision))
-                    .div(uint256(price));
-            } else {
-                units256 = amount_
-                    .mul(uint256(markets[sale.voucher].precision))
-                    .div(uint256(price));
-            }
-            require(units256 <= uint128(-1), "exceeds uint128 max");
-            units_ = uint128(units256);
-        }
+        // if (
+        //     sale.currency == Constants.ETH_ADDRESS &&
+        //     sale.priceType == PriceType.DECLIINING_BY_TIME &&
+        //     amount_ != msg.value
+        // ) {
+        //     amount_ = msg.value;
+        //     uint128 fee = _getFee(sale.voucher, amount_);
+        //     uint256 units256;
+        //     if (markets[sale.voucher].feePayType == FeePayType.BUYER_PAY) {
+        //         amount_ = amount_.sub(fee, "fee exceeds amount");
+        //         units256 = amount_
+        //             .mul(uint256(markets[sale.voucher].precision))
+        //             .div(uint256(price));
+        //     } else {
+        //         units256 = amount_
+        //             .mul(uint256(markets[sale.voucher].precision))
+        //             .div(uint256(price));
+        //     }
+        //     if (units256 > sale.units) {
+        //         units256 = sale.units;
+        //     }
+        //     require(units256 <= uint128(-1), "exceeds uint128 max");
+        //     units_ = uint128(units256);
+        // }
 
         fee_ = _getFee(sale.voucher, amount_);
 

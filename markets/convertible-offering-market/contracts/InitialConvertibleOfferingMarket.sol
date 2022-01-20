@@ -31,6 +31,7 @@ interface IConvertiblePool {
 
 interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
+
     function balanceOf(address account) external view returns (uint256);
 }
 
@@ -119,11 +120,11 @@ contract InitialConvertibleOfferingMarket is OfferingMarketCore {
     {
         Offering memory offering = offerings[offeringId_];
         MintParameter memory parameter = _mintParameters[offeringId_];
+        uint128 tokenInAmount = units_.div(parameter.lowestPrice);
         IERC20(markets[offering.voucher].asset).approve(
             markets[offering.voucher].voucherPool,
-            parameter.tokenInAmount
+            tokenInAmount
         );
-        uint128 tokenInAmount = units_.div(parameter.lowestPrice);
         (, voucherId) = IConvertibleVoucher(offering.voucher).mint(
             offering.issuer,
             offering.currency,
@@ -143,7 +144,9 @@ contract InitialConvertibleOfferingMarket is OfferingMarketCore {
         Offering memory offering = offerings[offeringId_];
         address asset = markets[offering.voucher].asset;
         uint256 balance = IERC20(asset).balanceOf(address(this));
-        uint256 refundAmount = units_.div(_mintParameters[offeringId_].lowestPrice);
+        uint256 refundAmount = units_.div(
+            _mintParameters[offeringId_].lowestPrice
+        );
         if (refundAmount > balance) {
             refundAmount = balance;
         }

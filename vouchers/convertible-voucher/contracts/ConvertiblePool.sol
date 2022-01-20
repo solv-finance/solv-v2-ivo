@@ -49,15 +49,14 @@ contract ConvertiblePool is
     }
 
     function initialize(
-        address underlyingVestingVoucher_,
+        address underlyingToken_,
         address oracle_,
         uint8 priceDecimals_,
         uint8 valueDecimals_
     ) external initializer {
         AdminControl.__AdminControl_init(_msgSender());
-        underlyingVestingVoucher = underlyingVestingVoucher_;
         oracle = IPriceOracleManager(oracle_);
-        underlyingToken = IICToken(underlyingVestingVoucher).underlying();
+        underlyingToken = underlyingToken_;
         priceDecimals = priceDecimals_;
         valueDecimals = valueDecimals_;
     }
@@ -144,7 +143,10 @@ contract ConvertiblePool is
         require(tokenInAmount_ != 0, "tokenInAmount cannot be 0");
         SlotDetail storage slotDetail = _slotDetails[slot_];
         require(slotDetail.isValid, "invalid slot");
-        require(!slotDetail.isIssuerRefunded, "cannot mint after refund");
+        require(
+            !slotDetail.isIssuerRefunded && block.timestamp < slotDetail.maturity, 
+            "non-mintable slot"
+        );
 
         totalValue = tokenInAmount_.mul(slotDetail.lowestPrice);
         slotDetail.totalValue = slotDetail.totalValue.add(totalValue);
@@ -466,6 +468,13 @@ contract ConvertiblePool is
         for (uint256 i = 0; i < slotDetails.length; i++) {
             slotDetails[i] = _slotDetails[_issuerSlots[issuer_].at(i)];
         }
+    }
+
+    function setUnderlyingVestingVoucher(address underlyingVestingVoucher_) 
+        external 
+        onlyAdmin 
+    {
+        underlyingVestingVoucher = underlyingVestingVoucher_;
     }
 
     function setFundCurrency(address fundCurrency_, bool enable_)

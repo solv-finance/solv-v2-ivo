@@ -21,8 +21,42 @@ contract ChainlinkPriceOracle is IPriceOracle, ChainlinkClient {
         bytes32 dateSignature;
     }
 
-    event NewAdmin(address oldAdmin, address newAdmin);
-    event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
+    event NewAdmin(
+        address oldAdmin, 
+        address newAdmin
+    );
+
+    event NewPendingAdmin(
+        address oldPendingAdmin, 
+        address newPendingAdmin
+    );
+
+    event SetPriceOracleManager(
+        address oldPriceOracleManager, 
+        address newPriceOracleManager
+    );
+
+    event SetJobId(
+        bytes32 oldJobId,
+        bytes32 newJobId
+    );
+ 
+    event SetOraclePayment(
+        uint256 oldOraclePayment,
+        uint256 newOraclePayment
+    );
+
+    event SetTokenId(
+        address underlying,
+        uint256 tokenId
+    );
+
+    event RefreshPrice(
+        address underlying, 
+        uint64 fromDate, 
+        uint64 toDate,
+        bytes32 requestId
+    );
 
     address public admin;
     address public pendingAdmin;
@@ -79,6 +113,8 @@ contract ChainlinkPriceOracle is IPriceOracle, ChainlinkClient {
             underlying: underlying_,
             dateSignature: _getDateSignature(fromDate, toDate)
         });
+
+        emit RefreshPrice(underlying_, fromDate_, toDate_, requestId);
     }
 
     function getPrice(
@@ -140,10 +176,12 @@ contract ChainlinkPriceOracle is IPriceOracle, ChainlinkClient {
     }
 
     function setJobId(bytes32 jobId_) external onlyAdmin {
+        emit SetJobId(JOB_ID, jobId_);
         JOB_ID = jobId_;
     }
 
     function setOraclePayment(uint256 payment_) external onlyAdmin {
+        emit SetOraclePayment(oraclePayment, payment_);
         oraclePayment = payment_;
     }
 
@@ -152,9 +190,12 @@ contract ChainlinkPriceOracle is IPriceOracle, ChainlinkClient {
         onlyAdmin
     {
         tokenIds[underlying_] = tokenId_;
+        emit SetTokenId(underlying_, tokenId_);
     }
 
     function setPriceOracleManager(address manager_) external onlyAdmin {
+        require(manager_ != address(0), "manager can not be 0 address");
+        emit SetPriceOracleManager(priceOracleManager, manager_);
         priceOracleManager = manager_;
     }
 

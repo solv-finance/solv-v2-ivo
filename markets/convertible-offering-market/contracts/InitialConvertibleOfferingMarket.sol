@@ -38,12 +38,6 @@ interface IERC20 {
 contract InitialConvertibleOfferingMarket is OfferingMarketCore {
     using SafeMathUpgradeable128 for uint128;
 
-    enum TimeType {
-        LATEST_START_TIME,
-        ON_BUY,
-        UNDECIDED
-    }
-
     struct MintParameter {
         uint128 lowestPrice;
         uint128 highestPrice;

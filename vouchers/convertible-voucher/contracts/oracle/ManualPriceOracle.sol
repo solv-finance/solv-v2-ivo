@@ -9,6 +9,8 @@ contract ManualPriceOracle is IPriceOracle {
     event NewAdmin(address oldAdmin, address newAdmin);
     event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
 
+    event SetPrice(address underlying, uint64 maturity, int256 price);
+
     address public admin;
     address public pendingAdmin;
 
@@ -28,8 +30,9 @@ contract ManualPriceOracle is IPriceOracle {
         address underlying_,
         uint64 maturity_,
         int256 price_
-    ) public onlyAdmin {
+    ) external onlyAdmin {
         manualPrice[underlying_][maturity_] = price_;
+        emit SetPrice(underlying_, maturity_, price_);
     }
 
     function refreshPrice(

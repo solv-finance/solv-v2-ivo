@@ -683,7 +683,10 @@ contract SolvConvertibleMarketplace is
         uint8 feeType_,
         uint128 feeAmount_,
         uint16 feeRate_
-    ) public onlyAdmin {
+    ) external onlyAdmin {
+        require(voucher_ != address(0), "voucher can not be 0 address");
+        require(feeRate_ <= Constants.FULL_PERCENTAGE, "invalid fee rate");
+
         markets[voucher_].isValid = true;
         markets[voucher_].precision = precision_;
         markets[voucher_].feePayType = FeePayType(feePayType_);
@@ -703,19 +706,19 @@ contract SolvConvertibleMarketplace is
         );
     }
 
-    function _removeMarket(address voucher_) public onlyAdmin {
+    function _removeMarket(address voucher_) external onlyAdmin {
         _vouchers.remove(voucher_);
         delete markets[voucher_];
         emit RemoveMarket(voucher_);
     }
 
-    function _setCurrency(address currency_, bool enable_) public onlyAdmin {
+    function _setCurrency(address currency_, bool enable_) external onlyAdmin {
         _currencies.add(currency_);
         emit SetCurrency(currency_, enable_);
     }
 
     function _withdrawFee(address currency_, uint256 reduceAmount_)
-        public
+        external
         onlyAdmin
     {
         ERC20TransferHelper.doTransferOut(

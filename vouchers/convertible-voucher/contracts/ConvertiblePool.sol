@@ -126,12 +126,15 @@ contract ConvertiblePool is
     ) public view {
         require(issuer_ != address(0), "issuer cannot be 0 address");
         require(fundCurrencies[fundCurrency_], "unsupported fund currency");
+        require(collateralType_ < 2, "invalid collateral type");
         require(
             lowestPrice_ > 0 && lowestPrice_ < highestPrice_,
             "invalid price bounds"
         );
-        require(effectiveTime_ < maturity_, "invalid time setting");
-        require(collateralType_ < 2, "invalid collateral type");
+        require(
+            effectiveTime_ > 0 && effectiveTime_ < maturity_, 
+            "invalid time setting"
+        );
     }
 
     function mintWithUnderlyingToken(

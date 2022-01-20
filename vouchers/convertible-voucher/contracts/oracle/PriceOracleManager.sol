@@ -13,12 +13,27 @@ import "../interface/IPriceOracle.sol";
 import "../interface/IConvertibleVoucher.sol";
 
 contract PriceOracleManager is IPriceOracleManager, AdminControl {
+
     event NewVoucherOracle(
         address voucher,
         address oldOracle,
         address newOracle
     );
-    event NewDefaultOracle(address oldOracle, address newOracle);
+    event NewDefaultOracle(
+        address oldOracle, 
+        address newOracle
+    );
+
+    event SetDefaultPricePeriod(
+        uint64 oldPricePeriod,
+        uint64 newPricePeriod
+    );
+
+    event SetPricePeriod(
+        address voucher, 
+        uint64 oldPricePeriod,
+        uint64 newPricePeriod
+    );
 
     uint64 public defaultPricePeriod;
     IPriceOracle public defaultOracle;
@@ -51,7 +66,8 @@ contract PriceOracleManager is IPriceOracleManager, AdminControl {
         emit NewDefaultOracle(old, address(newOracle_));
     }
 
-    function _setDefaultPricerPeriod(uint64 pricePeriod_) external onlyAdmin {
+    function _setDefaultPricePeriod(uint64 pricePeriod_) external onlyAdmin {
+        emit SetDefaultPricePeriod(defaultPricePeriod, pricePeriod_);
         defaultPricePeriod = pricePeriod_;
     }
 
@@ -59,6 +75,7 @@ contract PriceOracleManager is IPriceOracleManager, AdminControl {
         external
         onlyAdmin
     {
+        emit SetPricePeriod(voucher_, _pricePeriods[voucher_], pricePeriod_);
         _pricePeriods[voucher_] = pricePeriod_;
     }
 

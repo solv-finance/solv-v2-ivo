@@ -119,6 +119,33 @@ contract UniswapV2PriceOracle is IPriceOracle, AdminControl {
     using SafeMathUpgradeable for *;
     using BokkyPooBahsDateTimeLibrary for uint64;
 
+    event AddTokenConfig(
+        address underlying,
+        uint256 baseUnit,
+        uint256 anchorUnit,
+        address uniswapMarket,
+        bool isStableCoinBase,
+        bool isUniswapReversed
+    );
+
+    event SetPriceOracleManager(
+        address oldPriceOracleManager, 
+        address newPriceOracleManager
+    );
+
+    event RefreshPrice(
+        address underlying,
+        uint64 fromDate,
+        uint64 toDate,
+        uint256 fromTimestamp,
+        uint256 fromTokenAcc,
+        uint256 fromEthAcc,
+        uint256 toTimestamp,
+        uint256 toTokenAcc,
+        uint256 toEthAcc,
+        uint256 price
+    );
+
     struct TokenConfig {
         uint256 baseUnit;
         uint256 anchorUnit;
@@ -177,6 +204,11 @@ contract UniswapV2PriceOracle is IPriceOracle, AdminControl {
     ) external onlyAdmin {
         tokenConfigs[underlying_] = (
             TokenConfig(baseUnit_, anchorUnit_, uniswapMarket_, isStableCoinBase_, isUniswapReversed_)
+        );
+
+        emit AddTokenConfig(
+            underlying_, baseUnit_, anchorUnit_, uniswapMarket_, 
+            isStableCoinBase_, isUniswapReversed_
         );
     }
 
@@ -254,6 +286,13 @@ contract UniswapV2PriceOracle is IPriceOracle, AdminControl {
                 );
             }
         }
+
+        emit RefreshPrice(
+            underlying_, fromDate_, toDate_, 
+            observation.fromTimestamp, observation.fromTokenAcc, observation.fromEthAcc,
+            observation.toTimestamp, observation.toTokenAcc, observation.toEthAcc,
+            observation.price
+        );
     }
 
     function calculateAveragePrice(
@@ -320,6 +359,8 @@ contract UniswapV2PriceOracle is IPriceOracle, AdminControl {
     }
 
     function setPriceOracleManager(address manager_) external onlyAdmin {
+        require(manager_ != address(0), "manager can not be 0 address");
+        emit SetPriceOracleManager(priceOracleManager, manager_);
         priceOracleManager = manager_;
     }
 

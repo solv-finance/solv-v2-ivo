@@ -188,9 +188,10 @@ contract ConvertibleVoucher is IConvertibleVoucher, VoucherCore, ReentrancyGuard
         return convertiblePool.underlyingVestingVoucher();
     }
 
-    function setVoucherDescriptor(address newDescriptor) external onlyAdmin {
-        emit SetDescriptor(address(voucherDescriptor), newDescriptor);
-        voucherDescriptor = IVNFTDescriptor(newDescriptor);
+    function setVoucherDescriptor(address newDescriptor_) external onlyAdmin {
+        require(newDescriptor_ != address(0), "newDescriptor can not be 0 address");
+        emit SetDescriptor(address(voucherDescriptor), newDescriptor_);
+        voucherDescriptor = IVNFTDescriptor(newDescriptor_);
     }
 
     function setSolver(ISolver newSolver_) external onlyAdmin {

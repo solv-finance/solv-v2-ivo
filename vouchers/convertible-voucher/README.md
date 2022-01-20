@@ -11,3 +11,5 @@ This repository contains smart contracts for Convertible Voucher.
 [`PriceOracleManager`](./contracts/oracle/PriceOracleManager.sol): PriceOracleManager provides the abilities of setting designated oracles and pricing periods for any vouchers, and querying average prices according to tokenId of a voucher or maturity of a slot.
 
 [`ChainlinkPriceOracle`](./contracts/oracle/ChainlinkPriceOracle.sol): ChainlinkPriceOracle provides the abilities of querying token prices from Chainlink adaptors, as well as maintaining historical price querying results. 
+
+[`UniswapV2PriceOracle`](./contracts/oracle/UniswapV2PriceOracle.sol): UniswapV2PriceOracle provides the abilities of querying token prices from UniswapV2Pairs, which only supports 'baseToken-ETH' or 'baseToken-stableCoin' pairs. To acquire the average price over a period of time, the oracle should be triggered twice on the start and end dates.

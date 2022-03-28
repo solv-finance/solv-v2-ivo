@@ -4,6 +4,7 @@ pragma solidity 0.7.6;
 
 import '@openzeppelin/contracts/utils/Strings.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
+import './BokkyPooBahsDateTimeLibrary.sol';
 
 library StringConvertor {
 
@@ -104,6 +105,43 @@ library StringConvertor {
             str[3+i*2] = alphabet[uint8(value[i + 12] & 0x0f)];
         }
         return string(str);
+    }
+
+    function datetimeToString(uint256 timestamp) 
+        internal
+        pure
+        returns (string memory)
+    {
+        (uint256 year, uint256 month, uint256 day, uint256 hour, uint256 minute, uint256 second)
+            = BokkyPooBahsDateTimeLibrary.timestampToDateTime(timestamp);
+        return 
+            string(
+                abi.encodePacked(
+                    year.toString(), '/', 
+                    month < 10 ? '0' : '', month.toString(), '/', 
+                    day < 10 ? '0' : '', day.toString(), ' ',
+                    hour < 10 ? '0' : '', hour.toString(), ':', 
+                    minute < 10 ? '0' : '', minute.toString(), ':',
+                    second < 10 ? '0' : '',  second.toString()
+                )
+            );
+    }
+
+    function dateToString(uint256 timestamp)
+        internal
+        pure
+        returns (string memory)
+    {
+        (uint256 year, uint256 month, uint256 day)
+            = BokkyPooBahsDateTimeLibrary.timestampToDate(timestamp);
+        return 
+            string(
+                abi.encodePacked(
+                    year.toString(), '/', 
+                    month < 10 ? '0' : '', month.toString(), '/', 
+                    day < 10 ? '0' : '', day.toString()
+                )
+            );
     }
 
     function uintArray2str(uint64[] memory array) 

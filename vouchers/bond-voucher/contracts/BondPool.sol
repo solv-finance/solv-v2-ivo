@@ -160,13 +160,10 @@ contract BondPool is IBondPool, AdminControl, ReentrancyGuardUpgradeable {
     }
 
     /**
-     * @dev Allow issuers to refund bond vouchers with fund currency. 
-     * Refunding is only allowed before the first holder claiming. Once refunded,
-     * holders will claim in terms of 
+     * @dev Allow anyone to refund bond vouchers with fund currency. 
+     * Refunding is only allowed before the first holder claims. 
      */
     function refund(uint256 slot_) external override nonReentrant {
-        require(_issuerSlots[_msgSender()].contains(slot_), "only issuer");
-
         SlotDetail storage slotDetail = _slotDetails[slot_];
         require(slotDetail.isValid, "invalid slot");
         require(!slotDetail.isIssuerRefunded, "already refunded");

@@ -23,18 +23,14 @@ interface IBondVoucher {
         uint256 indexed tokenId,
         address indexed to,
         uint256 claimUnits,
-        uint256 claimCurrencyAmount, 
-        uint256 claimTokenAmount
+        uint256 claimCurrencyAmount
     );
 
     function mint(
         address issuer_,
-        address fundCurrency_,
-        uint128 lowestPrice_,
-        uint128 highestPrice_,
         uint64 effectiveTime_,
         uint64 maturity_,
-        uint256 tokenInAmount_
+        uint256 mintValue_
     ) 
         external 
         returns (uint256 slot, uint256 tokenId);
@@ -47,9 +43,6 @@ interface IBondVoucher {
 
     function getSlot(
         address issuer_,
-        address fundCurrency_,
-        uint128 lowestPrice_,
-        uint128 highestPrice_,
         uint64 effectiveTime_,
         uint64 maturity_
     ) 
@@ -71,7 +64,5 @@ interface IBondVoucher {
         external
         view
         returns (BondVoucherSnapshot memory);
-
-    function underlying() external view returns (address);
 
 }

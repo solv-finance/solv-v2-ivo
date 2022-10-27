@@ -5,15 +5,11 @@ pragma abicoder v2;
 
 import "@solv/v2-solidity-utils/contracts/openzeppelin/utils/ReentrancyGuardUpgradeable.sol";
 import "@solv/v2-solidity-utils/contracts/openzeppelin/utils/EnumerableSetUpgradeable.sol";
-import "@solv/v2-solidity-utils/contracts/openzeppelin/token/ERC20/IERC20.sol";
-import "@solv/v2-solidity-utils/contracts/helpers/ERC20TransferHelper.sol";
-import "@solv/v2-solidity-utils/contracts/helpers/VNFTTransferHelper.sol";
 import "@solv/v2-voucher-core/contracts/VoucherCore.sol";
 import "@solv/v2-solver/contracts/interface/ISolver.sol";
 import "./BondPool.sol";
 import "./interface/IVNFTDescriptor.sol";
 import "./interface/IBondVoucher.sol";
-import "./interface/external/IICToken.sol";
 
 contract BondVoucher is IBondVoucher, VoucherCore, ReentrancyGuardUpgradeable {
 
@@ -56,15 +52,12 @@ contract BondVoucher is IBondVoucher, VoucherCore, ReentrancyGuardUpgradeable {
 
     function mint(
         address issuer_,
-        address fundCurrency_,
-        uint128 lowestPrice_,
-        uint128 highestPrice_,
         uint64 effectiveTime_,
         uint64 maturity_,
-        uint256 tokenInAmount_ // 最大偿付token数量 (at lowestPrice)
+        uint256 mintValue_
     ) 
         external 
-        override
+        override 
         onlyManager
         nonReentrant
         returns (uint256 slot, uint256 tokenId) 
@@ -74,33 +67,23 @@ contract BondVoucher is IBondVoucher, VoucherCore, ReentrancyGuardUpgradeable {
             abi.encode(
                 _msgSender(),
                 issuer_,
-                fundCurrency_,
-                lowestPrice_,
-                highestPrice_,
                 effectiveTime_, 
-                maturity_,
-                tokenInAmount_
+                maturity_
             )
         );
         require(err == 0, "Solver: not allowed");
 
-        slot = getSlot(
-            issuer_, fundCurrency_, lowestPrice_, highestPrice_, 
-            effectiveTime_, maturity_
-        );
+        slot = getSlot(issuer_, effectiveTime_, maturity_);
         if (!getSlotDetail(slot).isValid) {
-            bondPool.createSlot(
-                issuer_, fundCurrency_, lowestPrice_, highestPrice_, 
-                effectiveTime_, maturity_
-            );
+            bondPool.createSlot(issuer_, effectiveTime_, maturity_);
         }
 
-        uint256 units = bondPool.mintWithUnderlyingToken(_msgSender(), slot, tokenInAmount_);
-        tokenId = VoucherCore._mint(_msgSender(), slot, units);
+        bondPool.mint(_msgSender(), slot, mintValue_);
+        tokenId = VoucherCore._mint(_msgSender(), slot, mintValue_);
 
         solver.operationVerify(
             "mint", 
-            abi.encode(_msgSender(), issuer_, slot, tokenId, units)
+            abi.encode(_msgSender(), issuer_, slot, tokenId, mintValue_)
         );
     }
 
@@ -122,8 +105,7 @@ contract BondVoucher is IBondVoucher, VoucherCore, ReentrancyGuardUpgradeable {
         );
         require(err == 0, "Solver: not allowed");
 
-        (uint256 claimCurrencyAmount, uint256 claimTokenAmount) 
-            = bondPool.claim(voucherSlotMapping[tokenId_], to_, claimUnits_);
+        uint256 claimCurrencyAmount = bondPool.claim(voucherSlotMapping[tokenId_], to_, claimUnits_);
 
         if (claimUnits_ == unitsInToken(tokenId_)) {
             _burnVoucher(tokenId_);
@@ -136,14 +118,11 @@ contract BondVoucher is IBondVoucher, VoucherCore, ReentrancyGuardUpgradeable {
             abi.encode(_msgSender(), tokenId_, to_, claimUnits_)
         );
 
-        emit Claim(tokenId_, to_, claimUnits_, claimCurrencyAmount, claimTokenAmount);
+        emit Claim(tokenId_, to_, claimUnits_, claimCurrencyAmount);
     }
 
     function getSlot(
         address issuer_,
-        address fundCurrency_,
-        uint128 lowestPrice_,
-        uint128 highestPrice_,
         uint64 effectiveTime_,
         uint64 maturity_
     ) 
@@ -152,10 +131,7 @@ contract BondVoucher is IBondVoucher, VoucherCore, ReentrancyGuardUpgradeable {
         override 
         returns (uint256) 
     {
-        return bondPool.getSlot(
-            issuer_, fundCurrency_, lowestPrice_, highestPrice_, 
-            effectiveTime_, maturity_
-        );
+        return bondPool.getSlot(issuer_, effectiveTime_, maturity_);
     }
 
     function getSlotDetail(uint256 slot_) public view override returns (IBondPool.SlotDetail memory) {
@@ -188,10 +164,6 @@ contract BondVoucher is IBondVoucher, VoucherCore, ReentrancyGuardUpgradeable {
         snapshot.tokenId = tokenId_;
         snapshot.parValue = unitsInToken(tokenId_);
         snapshot.slotDetail = bondPool.getSlotDetail(voucherSlotMapping[tokenId_]);
-    }
-
-    function underlying() external view override returns (address) {
-        return bondPool.underlyingToken();
     }
 
     function setVoucherDescriptor(address newDescriptor_) external onlyAdmin {
